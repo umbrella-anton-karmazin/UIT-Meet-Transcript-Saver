@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+
+  "name": "UIT Meet Transcript Saver",
+  "description": "Сохраняет субтитры Google Meet в текстовый файл (.txt).",
+  "version": "0.14.6",
+
+  "action": {
+    "default_title": "Save transcript"
+  },
+
+  "permissions": [
+    "downloads",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
