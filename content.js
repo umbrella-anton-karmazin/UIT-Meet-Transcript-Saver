@@ -24,9 +24,10 @@
   `;
 
   /** Селекторы областей и элементов с субтитрами. */
-  const ROOT_SEL = "div[aria-live='polite'][role='list'], div[aria-label='Captions'][role='region']";
+  const ROOT_SEL = "div[aria-live='polite'][role='list'], div[aria-label='Captions'][role='region'], div[aria-label='Субтитры'][role='region']";
   const ITEM_SEL =
     "div[role='listitem'][aria-label$=' caption']," +
+    "div[aria-label='Субтитры'][role='region'] div[data-message-index]," +
     "div[aria-label='Captions'][role='region'] div[data-message-index]";
 
   /** Функции‑утилиты. */
