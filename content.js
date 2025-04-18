@@ -31,7 +31,7 @@
     "div[aria-label='Captions'][role='region'] div[data-message-index]";
 
   /** Функции‑утилиты. */
-  const JUNK_RE     = /^(arrow[_-]?downward|more_vert|expand_less|settings)$/i;
+  const JUNK_RE     = /^(arrow[_-]?downward|more_vert|expand_less|settings|Jump to the bottom)$/i;
   const hasLetters  = s => /[a-zа-яё]/i.test(s);
   const clean       = s => s.replace(/\s+/g, ' ').trim();
   const canon       = s => s.toLowerCase()
