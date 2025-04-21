@@ -1,7 +1,7 @@
 /* ────────────────────────── shared config ────────────────────────── */
 
 const DEBUG       = true;
-const JUNK_RE     = /^(arrow[_-]?downward|more_vert|expand_less|settings|Jump to the bottom)$/i;
+const JUNK_RE     = /^(arrow[_-]?downward|more_vert|expand_less|settings|Jump to the bottom|Перейти вниз)$/i;
 const ROOT_SEL    = `div[aria-live='polite'][role='list'],
                       div[aria-label='Captions'][role='region'],
                       div[aria-label='Субтитры'][role='region']`;
@@ -91,13 +91,12 @@ class CaptionBuffer {
    * @param {HTMLElement} el
    */
   addLine(el) {
-    if (!el.closest(ROOT_SEL)) return;
-
+    if (!el.closest(ROOT_SEL)) return;    // Получаем имя спикера из атрибута aria-label или другого соответствующего элемента
     const raw = clean(el.innerText);
     if (!hasChars(raw) || raw.length < 2 || JUNK_RE.test(raw)) return;
 
     const pretty = raw;
-    const c      = canon(pretty);
+    const c = canon(pretty);
 
     // 1) Same DOM element → update existing row
     if (this.#track.has(el)) {
@@ -108,7 +107,7 @@ class CaptionBuffer {
       return;
     }
 
-    // 2) Merge with the last ≤5 rows if “almost” duplicate
+    // 2) Merge with the last ≤5 rows if "almost" duplicate
     for (let i = this.#rows.length - 1; i >= Math.max(0, this.#rows.length - 5); i--) {
       const r = this.#rows[i];
       if (levenshtein(r.canon, c) <= 3 || r.canon.startsWith(c) || c.startsWith(r.canon)) {
@@ -120,16 +119,22 @@ class CaptionBuffer {
 
     // 3) Brand‑new row
     const rel = ((performance.now() - this.#start) / 1000) | 0;
-    const ts  = `${String((rel / 60) | 0).padStart(2,'0')}:${String(rel % 60).padStart(2,'0')}`;
+    const ts = `${String((rel / 60) | 0).padStart(2,'0')}:${String(rel % 60).padStart(2,'0')}`;
 
-    this.#track.set(el, this.#rows.push({ ts, text: pretty, canon: c }) - 1);
+    this.#track.set(el, this.#rows.push({ 
+        ts, 
+        text: pretty, 
+        canon: c 
+    }) - 1);
   }
 
   /**
    * Returns array of strings `[mm:ss] text`.
    * Does NOT clear the buffer.
    */
-  toLines() { return this.#rows.map(r => `[${r.ts}] ${r.text}`); }
+  toLines() { 
+    return this.#rows.map(r => `[${r.ts}] ${r.text}`); 
+  }
 }
 
 /* ────────────────────────── DOM observer ────────────────────────── */
@@ -168,14 +173,14 @@ class CCAutotoggle {
   stop() { clearInterval(this.#timer); }
 }
 
-/* ────────────────────────── Saver & export ────────────────────────── */
+/* ────────────────────────── Saver & export ────────────────────────── */
 
 class TranscriptSaver {
   constructor(buffer, indicator) {
     this.buffer    = buffer;
     this.indicator = indicator;
 
-    // auto‑flush on “leave call” button
+    // auto‑flush on "leave call" button
     this.#bindLeaveBtn();
     // page lifecycle
     window.addEventListener('pagehide',     () => this.flush());
@@ -227,7 +232,6 @@ class MeetTranscriptSaver {
     // small loop to blink indicator only when captions area is mounted
     setInterval(() => {
       this.indicator.active = Boolean(document.querySelector(ROOT_SEL)?.checkVisibility());
-nt.querySelector(ROOT_SEL)?.checkVisibility()))
     }, 750);
   }
 }
