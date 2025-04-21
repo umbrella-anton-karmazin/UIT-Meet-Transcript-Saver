@@ -226,7 +226,8 @@ class MeetTranscriptSaver {
 
     // small loop to blink indicator only when captions area is mounted
     setInterval(() => {
-      this.indicator.active = Boolean(document.querySelector(ROOT_SEL));
+      this.indicator.active = Boolean(document.querySelector(ROOT_SEL)?.checkVisibility());
+nt.querySelector(ROOT_SEL)?.checkVisibility()))
     }, 750);
   }
 }
