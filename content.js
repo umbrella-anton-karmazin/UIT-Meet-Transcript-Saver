@@ -91,7 +91,7 @@ class CaptionBuffer {
    * @param {HTMLElement} el
    */
   addLine(el) {
-    if (!el.closest(ROOT_SEL)) return;    // Получаем имя спикера из атрибута aria-label или другого соответствующего элемента
+    if (!el.closest(ROOT_SEL)) return;
     const raw = clean(el.innerText);
     if (!hasChars(raw) || raw.length < 2 || JUNK_RE.test(raw)) return;
 

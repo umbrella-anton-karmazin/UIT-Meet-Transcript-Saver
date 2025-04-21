@@ -5,8 +5,19 @@
   "description": "Сохраняет субтитры Google Meet в текстовый файл (.txt).",
   "version": "1.0.4",
 
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+
   "action": {
-    "default_title": "Save transcript"
+    "default_title": "Save transcript",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
   },
 
   "permissions": [
