@@ -95,7 +95,7 @@ class CaptionBuffer {
 
     const pretty = raw;
     const c = canon(pretty);
-    
+
     // 1) Same DOM element → update existing row
     if (this.#track.has(el)) {
       const i = this.#track.get(el);

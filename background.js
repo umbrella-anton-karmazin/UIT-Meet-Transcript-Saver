@@ -59,7 +59,9 @@ function updateCurrentMeeting(meetingData) {
       meetings.push(currentMeeting);
     }
     
-    chrome.storage.local.set({ meetings });
+    chrome.storage.local.set({ meetings }, () => {
+      updateBadgeCount(); // Update badge after saving meeting
+    });
   });
 }
 
@@ -83,6 +85,23 @@ function stopMeetingUpdates() {
     updateInterval = null;
   }
   currentMeeting = null;
+  updateBadgeCount(); // Update badge when meeting ends
+}
+
+/**
+ * Updates the badge on the extension icon with the count of saved meetings
+ */
+function updateBadgeCount() {
+  chrome.storage.local.get(['meetings'], (result) => {
+    const meetings = result.meetings || [];
+    const count = meetings.length.toString();
+    
+    // Update the badge text with the number of saved meetings
+    chrome.action.setBadgeText({ text: count });
+    
+    // Set badge background color
+    chrome.action.setBadgeBackgroundColor({ color: '#4285F4' });
+  });
 }
 
 // централизованный обработчик сообщений из content‑script
@@ -107,3 +126,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
 });
+
+// Initialize badge count when extension loads
+updateBadgeCount();

@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
             meetings.splice(index, 1);
             chrome.storage.local.set({ meetings }, () => {
                 loadMeetings();
+                updateBadgeCount();
             });
         });
     }
@@ -72,8 +73,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm('Are you sure you want to delete all meetings?')) {
             chrome.storage.local.set({ meetings: [] }, () => {
                 loadMeetings();
+                updateBadgeCount();
             });
         }
+    }
+
+    // Update badge count
+    function updateBadgeCount() {
+        chrome.storage.local.get(['meetings'], (result) => {
+            const meetings = result.meetings || [];
+            const count = meetings.length.toString();
+            chrome.action.setBadgeText({ text: count });
+            chrome.action.setBadgeBackgroundColor({ color: '#4285F4' });
+        });
     }
 
     // Event listeners
