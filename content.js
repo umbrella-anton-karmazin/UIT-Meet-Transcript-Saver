@@ -95,7 +95,7 @@ class CaptionBuffer {
 
     const pretty = raw;
     const c = canon(pretty);
-
+    
     // 1) Same DOM element → update existing row
     if (this.#track.has(el)) {
       const i = this.#track.get(el);
@@ -105,17 +105,52 @@ class CaptionBuffer {
       return;
     }
 
-    // 2) Merge with the last ≤5 rows if "almost" duplicate
+    // 2) Защита коротких фраз от объединения (имена, короткие реплики)
+    const isShortPhrase = pretty.length <= 20;
+    
+    // 3) Проверяем, есть ли двоеточие - признак имени говорящего
+    const hasColon = pretty.includes(':');
+    
+    // 4) Если это короткая фраза или содержит имя - никогда не объединяем
+    if (isShortPhrase || hasColon) {
+      const rel = ((performance.now() - this.#start) / 1000) | 0;
+      const ts = `${String((rel / 60) | 0).padStart(2,'0')}:${String(rel % 60).padStart(2,'0')}`;
+      
+      this.#track.set(el, this.#rows.push({ 
+          ts, 
+          text: pretty, 
+          canon: c 
+      }) - 1);
+      
+      if (DEBUG) log('Сохранена короткая фраза:', pretty);
+      return;
+    }
+    
+    // 5) Улучшенная логика объединения для длинных фраз
     for (let i = this.#rows.length - 1; i >= Math.max(0, this.#rows.length - 5); i--) {
       const r = this.#rows[i];
-      if (levenshtein(r.canon, c) <= 3 || r.canon.startsWith(c) || c.startsWith(r.canon)) {
-        if (pretty.length > r.text.length) Object.assign(r, { text: pretty, canon: c });
+      
+      // Никогда не объединяем с короткими фразами
+      if (r.text.length <= 20 || r.text.includes(':')) {
+        continue;
+      }
+      
+      // Более строгие условия для объединения
+      const isSimilar = levenshtein(r.canon, c) <= 3 && 
+                        (r.canon.length > 25 || c.length > 25) &&
+                        (r.canon.startsWith(c) || c.startsWith(r.canon));
+      
+      if (isSimilar) {
+        if (pretty.length > r.text.length) {
+          Object.assign(r, { text: pretty, canon: c });
+          if (DEBUG) log('Объединена длинная фраза:', pretty);
+        }
         this.#track.set(el, i);
         return;
       }
     }
 
-    // 3) Brand‑new row
+    // 6) Новая запись для всех остальных случаев
     const rel = ((performance.now() - this.#start) / 1000) | 0;
     const ts = `${String((rel / 60) | 0).padStart(2,'0')}:${String(rel % 60).padStart(2,'0')}`;
 
@@ -124,6 +159,8 @@ class CaptionBuffer {
         text: pretty, 
         canon: c 
     }) - 1);
+    
+    if (DEBUG) log('Сохранена новая запись:', pretty);
   }
 
   /**
