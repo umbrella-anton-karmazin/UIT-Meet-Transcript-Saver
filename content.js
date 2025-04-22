@@ -50,27 +50,25 @@ class Indicator {
     const style = document.createElement('style');
     style.textContent = `
       #mtsIndicator{
-        position:fixed;top:20px;left:10px;width:24px;height:24px;
+        position:fixed;top:20px;left:10px;width:48px;height:48px;
         display:flex;align-items:center;justify-content:center;
-        font:700 18px/1 sans-serif;border-radius:50%;
-        color:#fff;z-index:2147483647;pointer-events:none;user-select:none}
-      #mtsIndicator.off{background:#d92b26}
-      #mtsIndicator.on {background:#26d968;animation:mts-blink 1s infinite alternate}
+        border-radius:50%;z-index:2147483647;pointer-events:none;user-select:none;
+        background-size:contain;background-position:center;background-repeat:no-repeat}
+      #mtsIndicator.off{background-image:url(${chrome.runtime.getURL('icon48off.png')})}
+      #mtsIndicator.on {background-image:url(${chrome.runtime.getURL('icon48.png')});animation:mts-blink 1s infinite alternate}
       @keyframes mts-blink{from{opacity:1}to{opacity:.35}}
     `;
     document.head.appendChild(style);
 
     this.#el = Object.assign(document.createElement('div'), {
       id: 'mtsIndicator',
-      className: 'off',
-      textContent: '×'
+      className: 'off'
     });
     document.body.appendChild(this.#el);
   }
 
   set active(v) {
-    this.#el.className   = v ? 'on' : 'off';
-    this.#el.textContent = v ? ''  : '×';
+    this.#el.className = v ? 'on' : 'off';
   }
 
   remove() { this.#el.remove(); }

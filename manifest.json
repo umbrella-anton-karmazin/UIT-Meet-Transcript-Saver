@@ -29,6 +29,11 @@
     "https://meet.google.com/*"
   ],
 
+  "web_accessible_resources": [{
+    "resources": ["icon48.png", "icon48off.png"],
+    "matches": ["https://meet.google.com/*"]
+  }],
+
   "background": {
     "service_worker": "background.js"
   },
