@@ -80,7 +80,7 @@ class Indicator {
 
 class CaptionBuffer {
   #rows    = [];               // {ts, text, canon}
-  #track   = new WeakMap();     // DOM element → row index
+  #track   = new WeakMap();     // DOM element → row index
   #start   = performance.now(); // meeting start (ms)
 
   get length() { return this.#rows.length; }
@@ -179,6 +179,8 @@ class TranscriptSaver {
   constructor(buffer, indicator) {
     this.buffer    = buffer;
     this.indicator = indicator;
+    this.title     = null;
+    this.isExtensionValid = true;
 
     // auto‑flush on "leave call" button
     this.#bindLeaveBtn();
@@ -195,22 +197,74 @@ class TranscriptSaver {
     else     setTimeout(() => this.#bindLeaveBtn(), 1000);        // wait until Meet loads it
   }
 
-  flush() {
-    if (!this.buffer.length) { this.indicator.remove(); return; }
-
+  #getTitle() {
+    if (this.title) return this.title;
+    
     const titleEl  = document.querySelector('div[role="main"] h1, div[role="main"] span[jsname]');
     const rawTitle = titleEl?.innerText || document.title || 'meet';
-    const title    = rawTitle.replace(/[\\/:*?"<>|]+/g,'').trim().slice(0,100);
+    this.title = rawTitle.replace(/[\\/:*?"<>|]+/g,'').trim().slice(0,100);
+    return this.title;
+  }
 
-    chrome.runtime?.sendMessage?.({
-      type: 'saveTranscript',
-      title,
-      data: this.buffer.toLines()
-    });
+  sendMessage(message) {
+    if (!this.isExtensionValid) return;
+    
+    try {
+      return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(message, response => {
+          if (chrome.runtime.lastError) {
+            if (chrome.runtime.lastError.message.includes('Extension context invalidated')) {
+              this.isExtensionValid = false;
+              reject(chrome.runtime.lastError);
+            } else {
+              reject(chrome.runtime.lastError);
+            }
+          } else {
+            resolve(response);
+          }
+        });
+      });
+    } catch (error) {
+      if (error.message.includes('Extension context invalidated')) {
+        this.isExtensionValid = false;
+      }
+      throw error;
+    }
+  }
 
-    log('Saved', this.buffer.length, 'lines');
-    this.buffer.reset();
-    this.indicator.remove();
+  async updateTranscript() {
+    if (!this.buffer.length || !this.isExtensionValid) return;
+
+    try {
+      await this.sendMessage({
+        type: 'updateTranscript',
+        title: this.#getTitle(),
+        data: this.buffer.toLines()
+      });
+    } catch (error) {
+      log('Error updating transcript:', error);
+    }
+  }
+
+  async flush() {
+    if (!this.buffer.length || !this.isExtensionValid) { 
+      this.indicator.remove(); 
+      return; 
+    }
+
+    try {
+      await this.sendMessage({
+        type: 'saveTranscript',
+        title: this.#getTitle(),
+        data: this.buffer.toLines()
+      });
+
+      log('Saved', this.buffer.length, 'lines');
+      this.buffer.reset();
+      this.indicator.remove();
+    } catch (error) {
+      log('Error saving transcript:', error);
+    }
   }
 }
 
@@ -223,16 +277,39 @@ class MeetTranscriptSaver {
     this.observer   = new CaptionObserver(this.buffer);
     this.ccToggler  = new CCAutotoggle();
     this.saver      = new TranscriptSaver(this.buffer, this.indicator);
+    this.updateInterval = null;
   }
 
-  init() {
+  async init() {
     this.observer.start();
     this.ccToggler.start();
 
-    // small loop to blink indicator only when captions area is mounted
-    setInterval(() => {
-      this.indicator.active = Boolean(document.querySelector(ROOT_SEL)?.checkVisibility());
-    }, 750);
+    try {
+      // Notify background script that meeting has started
+      await this.saver.sendMessage({ type: 'meetingStarted' });
+
+      // small loop to blink indicator only when captions area is mounted
+      setInterval(() => {
+        this.indicator.active = Boolean(document.querySelector(ROOT_SEL)?.checkVisibility());
+      }, 750);
+
+      // Periodic transcript updates
+      this.updateInterval = setInterval(() => {
+        this.saver.updateTranscript();
+      }, 1000);
+
+      // Handle meeting end
+      window.addEventListener('beforeunload', () => {
+        if (this.saver.isExtensionValid) {
+          this.saver.sendMessage({ type: 'meetingEnded' }).catch(() => {});
+        }
+      });
+    } catch (error) {
+      log('Error initializing:', error);
+      if (this.updateInterval) {
+        clearInterval(this.updateInterval);
+      }
+    }
   }
 }
 
