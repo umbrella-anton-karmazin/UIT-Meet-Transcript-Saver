@@ -93,7 +93,7 @@ class CaptionBuffer {
   addLine(el) {
     if (!el.closest(ROOT_SEL)) return;
     const raw = clean(el.innerText);
-    if (!hasChars(raw) || raw.length < 2 || JUNK_RE.test(raw)) return;
+    if (!hasChars(raw) || JUNK_RE.test(raw)) return;
 
     const pretty = raw;
     const c = canon(pretty);
