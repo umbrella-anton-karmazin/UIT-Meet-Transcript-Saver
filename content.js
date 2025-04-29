@@ -53,10 +53,20 @@ class Indicator {
         position:fixed;top:20px;left:10px;width:48px;height:48px;
         display:flex;align-items:center;justify-content:center;
         border-radius:50%;z-index:2147483647;pointer-events:none;user-select:none;
-        background-size:contain;background-position:center;background-repeat:no-repeat}
-      #mtsIndicator.off{background-image:url(${chrome.runtime.getURL('icon48off.png')})}
-      #mtsIndicator.on {background-image:url(${chrome.runtime.getURL('icon48.png')});animation:mts-blink 1s infinite alternate}
-      @keyframes mts-blink{from{opacity:1}to{opacity:.35}}
+        background-size:contain;background-position:center;background-repeat:no-repeat;
+        transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        opacity: 1;
+        transform: scale(1)}
+      #mtsIndicator.off{
+        background-image:url(${chrome.runtime.getURL('icon48off.png')})}
+      #mtsIndicator.on{
+        background-image:url(${chrome.runtime.getURL('icon48.png')})}
+      #mtsIndicator.transitioning{
+        transform: scale(1.5);
+        opacity: 0.5}
+      #mtsIndicator.removing{
+        transform: scale(0.5);
+        opacity: 0}
     `;
     document.head.appendChild(style);
 
@@ -68,10 +78,19 @@ class Indicator {
   }
 
   set active(v) {
-    this.#el.className = v ? 'on' : 'off';
+    const newClass = v ? 'on' : 'off';
+    if (this.#el.className !== newClass) {
+      this.#el.className = 'transitioning';
+      setTimeout(() => {
+        this.#el.className = newClass;
+      }, 250);
+    }
   }
 
-  remove() { this.#el.remove(); }
+  remove() { 
+    this.#el.className = 'removing';
+    setTimeout(() => this.#el.remove(), 500);
+  }
 }
 
 /* ────────────────────────── Subtitle buffer ────────────────────────── */
