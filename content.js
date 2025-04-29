@@ -194,18 +194,42 @@ class CaptionObserver {
 
 class CCAutotoggle {
   #timer;
+  #attempted = false;
+  #maxAttempts = 10; // Try up to 10 times with 500ms intervals
+  #attemptCount = 0;
 
   start() {
     const toggle = () => {
+      if (this.#attempted) return; // Don't try if we already attempted
+      
       const btn = document.querySelector(CC_BTN_SEL);
-      btn ? btn.click() : document.dispatchEvent(new KeyboardEvent('keydown', {
+      if (btn) {
+        btn.click();
+        this.#attempted = true;
+        this.stop();
+        return;
+      }
+      
+      // If button not found, try keyboard shortcut
+      document.dispatchEvent(new KeyboardEvent('keydown', {
         key:'C', code:'KeyC', shiftKey:true, bubbles:true
       }));
+      
+      this.#attemptCount++;
+      if (this.#attemptCount >= this.#maxAttempts) {
+        this.#attempted = true;
+        this.stop();
+      }
     };
-    this.#timer = setInterval(toggle, 1500);
-    setTimeout(() => this.stop(), 15000);
+    
+    // Try every 500ms up to maxAttempts times
+    this.#timer = setInterval(toggle, 500);
   }
-  stop() { clearInterval(this.#timer); }
+  
+  stop() { 
+    clearInterval(this.#timer);
+    this.#timer = null;
+  }
 }
 
 /* ────────────────────────── Saver & export ────────────────────────── */
